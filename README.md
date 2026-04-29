@@ -1,6 +1,6 @@
 # blackhole_mono_particles
 
-Simulasi visual black hole monokrom berbasis C++17 dan OpenGL 3.3 core profile. Fokusnya adalah piringan akresi granular hitam-putih dengan ratusan ribu partikel, event horizon hitam pekat, kamera 3D interaktif, grid ruang-waktu opsional, dan post-processing grayscale dengan contrast, bloom ringan, vignette, grain, serta distorsi lensing sederhana.
+Simulasi visual black hole monokrom berbasis C++17 dan OpenGL 3.3 core profile. Fokusnya adalah piringan akresi granular hitam-putih dengan ratusan ribu partikel, shadow black hole screen-space, photon ring tipis, kamera 3D interaktif, grid ruang-waktu opsional, dan post-processing grayscale dengan contrast, bloom ringan, vignette, grain, serta distorsi lensing sederhana.
 
 Visual piringan akresi sengaja tidak memakai warna kuning, oranye, merah, biru, atau palet warna lain. Semua output scene dan post-processing tetap grayscale.
 
@@ -63,19 +63,28 @@ cmake --build blackhole_mono_particles/build
 
 Parameter awal berada di `src/main.cpp` dan `src/ParticleSystem.hpp`:
 
-- `NUM_PARTICLES = 200000`
+- `NUM_PARTICLES = 2000000`
 - `INNER_RADIUS = 1.4f`
 - `OUTER_RADIUS = 8.0f`
 - `EVENT_HORIZON_RADIUS = 1.0f`
 - `DISK_THICKNESS = 0.18f`
 - `MIN_PARTICLE_SIZE = 0.75f`
-- `MAX_PARTICLE_SIZE = 3.4f`
+- `MAX_PARTICLE_SIZE = 2.8f`
 - `BASE_ORBIT_SPEED = 2.2f`
+- `SHADOW_RADIUS_SCALE = 1.4f`
+- `PHOTON_RING_RADIUS_SCALE = 0.8f`
+- `PHOTON_RING_WIDTH_SCALE = 0.09f`
+- `PHOTON_RING_INTENSITY = 0.32f`
+- `LENS_STRENGTH = 0.30f`
+- `DOPPLER_STRENGTH = 0.38f`
+- `BACK_ARC_LIFT = 0.20f`
 - `GRAIN_STRENGTH = 0.25f`
 - `BLOOM_STRENGTH = 0.35f`
 - `VIGNETTE_STRENGTH = 0.65f`
 - `POST_CONTRAST = 1.25f`
-- `ParticleSizeScale = 1.0f`
+- `ParticleSizeScale = 1.25f`
+
+Mesh sphere event horizon masih ada di kode, tetapi tidak dirender pada mode final (`RenderEventHorizonMesh = false`). Visual pusat gelap dibuat oleh shader post-processing agar terbaca sebagai shadow optik yang lebih besar dari event horizon fisik.
 
 Jika GPU terasa berat, turunkan `NUM_PARTICLES` ke `50000` atau `30000`, atau turunkan `ParticleSizeScale` di `src/main.cpp`. Orbit partikel dihitung di vertex shader OpenGL sehingga CPU tidak meng-upload posisi partikel tiap frame, tetapi jumlah partikel, ukuran point sprite, additive blending, dan post-processing tetap bisa membebani GPU/fill-rate.
 

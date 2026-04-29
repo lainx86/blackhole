@@ -22,10 +22,12 @@ void main()
         discard;
     }
 
-    float shape = 1.0 - smoothstep(0.15, 1.0, r);
-    float grain = (hash(gl_FragCoord.xy + time * 13.0) - 0.5) * grainStrength;
-    float b = clamp(vBrightness + grain, 0.0, 1.0);
-    float alpha = shape * b;
+    float core = exp(-r * 2.6);
+    float edge = 1.0 - smoothstep(0.58, 1.0, r);
+    float shape = core * edge;
+    float grain = (hash(gl_FragCoord.xy + time * 13.0) - 0.5) * grainStrength * 0.18;
+    float b = clamp(vBrightness * (1.0 + grain), 0.0, 0.92);
+    float alpha = shape * b * 0.82;
 
     FragColor = vec4(vec3(b), alpha);
 }

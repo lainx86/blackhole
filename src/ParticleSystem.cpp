@@ -55,23 +55,27 @@ void ParticleSystem::initialize(size_t count)
         const float thickness = DiskThickness * (0.45f + 0.55f * radius / OuterRadius);
         const float y = (rand01(rng) - 0.5f) * thickness;
 
-        const float innerGlow = 1.0f - smoothstep(InnerRadius, OuterRadius, radius);
-        const float densityPattern = 0.5f + 0.5f * std::sin(angle * 6.0f + radius * 2.0f);
-        const float noise = 0.35f + 0.65f * rand01(rng);
+        const float innerHeat = 1.0f - smoothstep(InnerRadius, OuterRadius * 0.82f, radius);
+        const float innerGate = smoothstep(InnerRadius * 0.92f, InnerRadius * 1.45f, radius);
+        const float outerFade = 1.0f - smoothstep(OuterRadius * 0.82f, OuterRadius, radius);
+        const float densityPattern = 0.5f + 0.5f * std::sin(angle * 5.0f + radius * 2.4f);
+        const float filament = 0.5f + 0.5f * std::sin(angle * 2.0f - radius * 3.0f);
+        const float gasPattern = 0.58f + 0.28f * densityPattern + 0.14f * filament;
+        const float noise = 0.42f + 0.58f * rand01(rng);
         const float brightness = glm::clamp(
-            0.06f + innerGlow * noise * (0.58f + 0.42f * densityPattern),
-            0.02f,
-            0.82f
+            (0.035f + innerHeat * 0.42f * noise * gasPattern) * innerGate * outerFade + 0.016f,
+            0.012f,
+            0.58f
         );
 
         const float sizeRoll = rand01(rng);
         float size = 0.0f;
-        if (sizeRoll < 0.70f) {
-            size = MinParticleSize + rand01(rng) * 0.9f;
-        } else if (sizeRoll < 0.95f) {
-            size = 1.55f + rand01(rng) * 0.9f;
+        if (sizeRoll < 0.78f) {
+            size = MinParticleSize + rand01(rng) * 0.55f;
+        } else if (sizeRoll < 0.97f) {
+            size = 1.25f + rand01(rng) * 0.55f;
         } else {
-            size = 2.4f + rand01(rng) * (MaxParticleSize - 2.4f);
+            size = 1.80f + rand01(rng) * (MaxParticleSize - 1.80f);
         }
         size = glm::clamp(size, MinParticleSize, MaxParticleSize);
 

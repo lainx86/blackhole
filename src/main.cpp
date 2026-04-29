@@ -13,6 +13,7 @@
 #include "ParticleSystem.hpp"
 #include "Shader.hpp"
 
+#include <cmath>
 #include <exception>
 #include <iostream>
 #include <string>
@@ -20,13 +21,21 @@
 namespace {
 constexpr int InitialWidth = 1280;
 constexpr int InitialHeight = 720;
-constexpr size_t NumParticles = 200000;
+constexpr size_t NumParticles = 2000000;
 constexpr float EventHorizonRadius = 1.0f;
+constexpr float ShadowRadiusScale = 1.8f;
+constexpr float PhotonRingRadiusScale = 1.0f;
+constexpr float PhotonRingWidthScale = 0.09f;
+constexpr float PhotonRingIntensity = 0.32f;
+constexpr float LensStrength = 0.30f;
+constexpr float DopplerStrength = 0.38f;
+constexpr float BackArcLift = 0.20f;
 constexpr float GrainStrength = 0.25f;
 constexpr float BloomStrength = 0.35f;
 constexpr float VignetteStrength = 0.65f;
 constexpr float PostContrast = 1.25f;
-constexpr float ParticleSizeScale = 1.0f;
+constexpr float ParticleSizeScale = 1.25f;
+constexpr bool RenderEventHorizonMesh = false;
 
 Camera *g_camera = nullptr;
 bool g_firstMouse = true;
@@ -116,6 +125,20 @@ glm::vec2 projectOriginToScreen(const glm::mat4 &projection, const glm::mat4 &vi
     }
     const glm::vec3 ndc = glm::vec3(clip) / clip.w;
     return glm::vec2(ndc.x * 0.5f + 0.5f, ndc.y * 0.5f + 0.5f);
+}
+
+float projectRadiusToScreen(const glm::mat4 &projection, const glm::mat4 &view, float radius)
+{
+    const glm::vec4 centerView = view * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    const glm::vec4 centerClip = projection * centerView;
+    const glm::vec4 edgeClip = projection * (centerView + glm::vec4(0.0f, radius, 0.0f, 0.0f));
+    if (centerClip.w <= 0.0001f || edgeClip.w <= 0.0001f) {
+        return 0.0f;
+    }
+
+    const float centerY = centerClip.y / centerClip.w;
+    const float edgeY = edgeClip.y / edgeClip.w;
+    return std::abs(edgeY - centerY) * 0.5f;
 }
 }
 
@@ -265,11 +288,13 @@ int main()
                 glDisable(GL_BLEND);
             }
 
-            blackHoleShader.use();
-            blackHoleShader.setMat4("model", model);
-            blackHoleShader.setMat4("view", view);
-            blackHoleShader.setMat4("projection", projection);
-            blackHole.render(blackHoleShader);
+            if (RenderEventHorizonMesh) {
+                blackHoleShader.use();
+                blackHoleShader.setMat4("model", model);
+                blackHoleShader.setMat4("view", view);
+                blackHoleShader.setMat4("projection", projection);
+                blackHole.render(blackHoleShader);
+            }
 
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -281,6 +306,9 @@ int main()
             particleShader.setMat4("projection", projection);
             particleShader.setFloat("simulationTime", simulationTime);
             particleShader.setFloat("particleSizeScale", ParticleSizeScale);
+            particleShader.setVec3("cameraPosition", camera.position());
+            particleShader.setFloat("dopplerStrength", DopplerStrength);
+            particleShader.setFloat("backArcLift", BackArcLift);
             particleShader.setFloat("grainStrength", enableGrain ? GrainStrength : 0.0f);
             particleShader.setFloat("time", currentTime);
             particles.render(particleShader);
@@ -305,7 +333,17 @@ int main()
             postShader.setVec2("resolution", static_cast<float>(width), static_cast<float>(height));
 
             const glm::vec2 blackHoleScreen = projectOriginToScreen(projection, view);
+            const float eventHorizonScreenRadius =
+                projectRadiusToScreen(projection, view, EventHorizonRadius);
+            const float shadowScreenRadius = eventHorizonScreenRadius * ShadowRadiusScale;
             postShader.setVec2("blackHoleScreenPos", blackHoleScreen.x, blackHoleScreen.y);
+            postShader.setFloat("eventHorizonRadius", eventHorizonScreenRadius);
+            postShader.setFloat("shadowRadius", shadowScreenRadius);
+            postShader.setFloat("photonRingRadius", shadowScreenRadius * PhotonRingRadiusScale);
+            postShader.setFloat("photonRingWidth", eventHorizonScreenRadius * PhotonRingWidthScale);
+            postShader.setFloat("photonRingIntensity", PhotonRingIntensity);
+            postShader.setFloat("lensStrength", LensStrength);
+            postShader.setFloat("screenAspect", static_cast<float>(width) / static_cast<float>(height));
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, framebuffer.texture());

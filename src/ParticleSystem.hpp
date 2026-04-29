@@ -35,7 +35,7 @@ public:
     static constexpr float OuterRadius = 8.0f;
     static constexpr float DiskThickness = 0.18f;
     static constexpr float MinParticleSize = 0.75f;
-    static constexpr float MaxParticleSize = 3.4f;
+    static constexpr float MaxParticleSize = 2.8f;
     static constexpr float BaseOrbitSpeed = 2.2f;
 
     ParticleSystem() = default;
